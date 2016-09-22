@@ -1,0 +1,463 @@
+Hive Integration with Spark
+============================
+
+1) Ensure Hadoop Services are live and active.
+
+2) Extract the spark tar file (Download SPark based on Hadoop Version or built your custom version)
+
+	tar -xvf spark-1.6.1-hadoop*.tar
+
+3) Rename the extracted folder
+
+	mv spark-1.6* spark
+
+4) Copy hive-site.xml in /home/hadoop/spark/conf folder
+
+5) Start ThriftService offered by Spark to connect to Hive Beeline.
+
+	cd spark/sbin
+
+./start-thriftserver.sh --jars /home/hadoop/hive/lib/mysql-connector-java-5.1.27-bin.jar
+
+
+6) Start Beeline to interact with Hive.
+
+beeline -u jdbc:hive2://hadoopvm:10000
+
+
+
+Phases of Bigdata:
+
+Data		Data		Data 		Data		BI
+Acqusn		PreP		Transfn		View		Ana
+								Viz
+Sqoop ----> HDFS-->S/MR------>HDFS-->S (C,SQL-->HDFS --> DB --> BI
+Flume				     ,MLLib)MR			Viz	
+Kafka 					     -->NoSQL -------->BI	
+								Viz
+
+--------------------------------------------------------
+		
+--------------------------------------------------------
+		HDFS ( Hadoop DFS )
+	S3 buckets, Mainframe S, HDFS-compliant St.
+--------------------------------------------------------
+
+
+
+
+
+
+
+NoSQL ( Not Only SQL )
+-----------------------
+
+
+Node 1 ---- Employee (1,2000)
+-------
+
+
+Node2 ---- Employee (1,1000)
+
+
+
+
+Node3 ---- Employee
+
+
+
+
+
+
+
+Why HBase compared to HDFS?
+
+	1) HDFS follows WRITE ONCE which is a defect when it comes 	to query layer. To overcome the same, HBASe is used
+
+	2) HBase follows WRITE MANY
+
+	3) HDFS cannot perform RANDOM R/W. HBASe can.
+
+NoSQL -----------Not a Structured Query Language 
+==========
+
+SQL ------ records
+NoSQL ---- columns
+
+NoSQL purely follows columnar approach
+
+SQL
+
+We are looking for a solution which will allow user to create columns on the fly considering the fact the fetch cycle is faster irrespective of the number of records inserted.
+
+
+Not a Sturctured Query Language
+
+1. HBase -------------> Hadoop DataBase (HDFS STorage as storage and MR as processing medium)
+
+Query mechanism to query a data residing in HDFS layer with update facility(DML).
+
+
+2. Cassandra ------> Integrated with Hadoop or  Proprietory Storage.
+3. MongoDB ------> Integrated with Hadoop or  Proprietory Storage.
+4. Graph DB(Giraph) ----> Propreitory stiorage
+
+
+I need a mechanism of a schemaless database to store as and when required to create the columns on the fly.
+
+Facebook
+========
+HBase, cassandra, Voldemort
+
+
+NOSQL LANDSCAPE
+-----------------------------------------------
+
+
+Key-Value Stores
+1. Dynamo DB ---- Amazon AWS 
+2. Voldemort(LinkedIN)
+3. Citrusleaf
+4. Membase
+5. Tokyo Cabinet
+6. HBase
+
+
+Big Table Clones
+1. BigTable(google)
+2. Cassandra -----------------Best Solution Cluster level DataStore
+3. HBase
+4. Hypertable
+
+
+Document Database
+1.CouchOne
+2.MongoDB ---- Single Node (Best) Cluster Mode(Worst)
+3. Terrastore
+4. OrientDB
+
+
+
+GRaph Databases (BLOB data in tree structure)
+1. Flock DB (twitter)
+2. AllegroGraph
+3. DEX
+4. InfoGrid
+5. Neo4J
+6. Unicorn (facebook)
+7. Apache Giraph
+
+Books:
+1)Programming Hive
+2)HBase - The Definitive Guides
+
+
+Installation
+-------------
+Step 1 - Download hbase-0.98.19-hadoop1-bin.tar.gz from the mirror website hbase.apache.org
+wget http://mirror.reverse.net/pub/apache/hbase/stable/hbase-0.98.19-hadoop1-bin.tar.gz
+Step 2 - Untar the downloaded file
+tar -xvzf hbase-0.98.19-hadoop1-bin.tar.gz
+
+Step 3 - Rename the hbase extracted folder
+
+ mv hbase-0.98.19-hadoop1-bin hbase
+
+
+Step 4 - Set the path in bash environment
+vi .bashrc
+
+type the following at the end of the line
+export HBASE_PREFIX=/home/hadoop/hbase
+export PATH=$PATH:$HBASE_PREFIX/bin
+
+Once the data is entered, save it and update the bash using the command 
+'exec bash'
+
+Settings
+-------------------------------
+
+hbase-site.xml ----- vi hbase/conf/hbase-site.xml
+-------------------
+hbase.rootdir=hdfs://IPAddress_of_your_system:9000/hbase
+
+dfs.replication=1 
+
+hbase.cluster.distributed=true
+
+hbase.zookeeper.quorum=localhost
+
+
+hadoop-env.sh ------ sudo vi hadoop/conf/hadoop-env.sh
+----------------
+export HADOOP_CLASSPATH="$HADOOP_CLASSPATH:/usr/local/hbase/lib/zookeeper-3.4.6.jar"
+
+Step 6 - Configure hbase environment settings
+sudo vi $HBASE_PREFIX/conf/hbase-env.sh
+
+Uncomment and modify the lines in this file as shown 
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle14:34 26-05-2016
+
+
+
+Step 8 - Setup the region servers.
+sudo vi $HBASE_PREFIX/conf/regionservers
+Add the IP addresses inside one line after another
+
+Step 9 - Start the HBase using command 
+start-hbase.sh
+
+Step 10 - Check the configuration via web browser using
+http://IPADDRESS_OF_SYSTEM_WHERE_HBASE_IS_INSTALLED:60010/
+
+
+
+
+Step 12 - Start HBASE shell
+hbase shell
+
+Thus installation and configuration of the HBase server is done successfully.
+
+Hbase UI ----- http://IPADDOFHMaster:60010/
+
+
+
+
+Exercise time :)
+
+create 'student', {NAME => 'details', VERSIONS =>'10'},{NAME => 'education'}, {NAME => 'hobbies'}
+
+		-OR-
+
+create 'student','details','education','hobbies'
+
+scan 'student'
+
+
+put 'student','first','details:name','prashant'
+
+put 'student','first','details:age','20'
+
+put 'student','first','details:gender','M'
+
+put 'student','second','details:name','ravi'
+
+put 'student','second','education:degree','MBA'
+
+
+get 'student','first','details:name'
+
+
+put 'student','second','education:degree','BE'  ---- update or insert
+
+
+
+scan 'student',{VERSIONS =>2}
+
+
+alter 'student', {NAME => 'education', VERSIONS => 5}
+
+
+delete 'student','first','details:age'
+
+
+Web services 
+http
+
+REST -----> Representational State Transfer Protocol which is used to carry the data from source to destination using http protocol. Web service to interact with an object.
+
+
+
+REST -----> Hbase object -----> I can get the column values !!!!
+
+
+SOA ---> Service oriented Architecture
+
+To enable the REST Services in HBase, the command is 
+
+hbase-daemon.sh start rest
+
+http://IPAddofHMaster:8080
+http://192.168.31.164:8080/employee/1/details:phone
+
+Sqoop
+------
+
+Sqoop is a CLI tool for performing:
+
+import operation
+
+	DB to HDFS
+	DB to Hive	
+	DB to Hbase
+
+Export operation
+
+	HDFS to DB 
+
+
+The database can be any Java-compliant databases. Java-compliant means the database provider must provide the java connector of their product.
+
+
+
+Installation
+==================================================================
+
+Step 1 - Download sqoop-1.4.4.bin hadoop-1.0.0.tar.gz from the mirror website sqoop.apache.org
+wget http://mirror.cogentco.com/pub/apache/sqoop/1.4.4/sqoop-1.4.4.bin__hadoop-1.0.0.tar.gz
+
+Step 2 - Untar the downloaded file
+tar -xvzf sqoop-1.4.4.bin__hadoop-1.0.0.tar.gz
+
+Step 3 - Copy the extracted folder in /usr/local/sqoop location 
+mv sqoop-1.4.4.bin__hadoop-1.0.0.tar.gz
+
+Step 4 - Set the path in bash environment
+vi .bashrc
+type the following at the end of the line
+
+export PATH=$PATH:/home/hadoop/sqoop/bin
+export HADOOP_COMMON_HOME=/home/hadoop/hadoop
+export HADOOP_MAPRED_HOME=/home/hadoop/hadoop
+export HIVE_HOME=/home/hadoop/hive
+export HBASE_HOME=/home/hadoop/hbase
+
+S
+
+Step 5: Copy the MySQL Connector JAR in /home/hadoop/sqoop/lib using WinSCP.	
+
+
+Step 7 - Start mysql server using command
+mysql -u root -p
+
+Step 8- Create a database for testing sqoop
+create database prashant;
+
+use prashant;
+
+Step 9 - Create a table named auth inside prashant database.
+
+create table auth(username varchar(30),password varchar(30));
+
+Step 10 - Add some entries in table.
+insert into auth values ('admin','123456');
+insert into auth values ('prashant','prashant123');
+
+
+Once the changes are saved, update bashrc using the command 'exec bash'
+
+
+==============================================================================
+SQOOP COMMANDS
+==============================================================================
+
+List the databases in your MySQL server:
+-----------------------------------------
+
+sqoop list-databases --connect "jdbc:mysql://localhost" --username root --password 123456
+
+
+
+Import the entire table from the database to HDFS:
+----------------------------------------------------
+
+sqoop import --connect jdbc:mysql://localhost/prashant --username root --password 123456 --table auth --target-dir /sqoop/authtable -m 1
+
+import ---> From DB to HDFS
+export ---> HDFS to DB
+
+
+-m refers mappers.
+
+If your table has primary key then need not specify -m. Mappers are decided by using the primary key parameter.
+
+
+MySQL Communication Link Failure Error Solution
+------------------------------------------------
+
+mysql -u root -p
+
+
+GRANT ALL ON *.* to root@'master1' IDENTIFIED BY '<password>';
+GRANT ALL ON *.* to root@'master2' IDENTIFIED BY '<password>';
+
+GRANT ALL ON *.* to root@'slave1' IDENTIFIED BY '<password>';
+
+GRANT ALL ON *.* to root@'slave2' IDENTIFIED BY 'password';
+GRANT ALL ON *.* to root@'slave3' IDENTIFIED BY 'password';
+
+Importing only the subset of the data from DB table to HDFS
+-------------------------------------------------------------
+
+sqoop import --connect jdbc:mysql://localhost/prashant --username root --password 123456 --table auth --where "password = '123456'" --target-dir /sqoop/authresult
+
+Importing data directly to hive
+--------------------------------
+
+Sqoop supports importing into Hive. Add the parameter --hive-import to your command to enable it:
+Create external table in hive and then add --hive-table parameter. It will work !!!
+
+
+
+hadoop fs -ls
+hadoop fs -rmr location
+
+
+
+sqoop import --connect jdbc:mysql://localhost/prashant --username root --password 123456 --table auth --hive-import --hive-table auth -m 1
+
+
+Thrift
+
+
+Importing data directly to hbase
+----------------------------------
+
+Sqoop has out-of-the-box support for HBase. To enable import into HBase, you need to supply two additional parameters: --hbase-table and --column-family. The parameter --hbase-table specifies the name of the table in HBase to which you want to import your data. The parameter --column-family specifies into which column family Sqoop will import your table’s data. For example, you can import the table cities into HBase with the same table name and use the column family name world:
+
+
+hbase shell
+
+create 'test','auth' (on hbase)
+
+sqoop import --connect jdbc:mysql://localhost/prashant --username root --password 123456 --table auth --hbase-table test --column-family auth --hbase-row-key username -m 1
+
+
+
+
+Exporting the data from HDFS to DB table:
+-----------------------------------------
+
+To export the data, you need to create a schema. For our demo, we will be using truncate command.
+
+mysql -u root -p
+
+use prashant;
+
+truncate auth;
+
+quit
+
+sqoop export --connect "jdbc:mysql://localhost/prashant" --username root --password 123456 --export-dir /sqoop/authtable/part-m-00000 --table auth --input-fields-terminated-by ','
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

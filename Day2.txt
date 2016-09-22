@@ -1,0 +1,1077 @@
+Hadoop Training
+================
+Trainer Name: Prashant Nair
+Trainer Email: prashant.nair2050@gmail.com
+
+Agenda Day 2
+=============
+
+Basic Admin techniques ( Scalability in Hadoop, HDFS commands, HDFS admin commands )
+Hadoop Gen2 ( HDFS and YARN )
+YARN Implementation
+MapReduce Paradigm
+'
+
+HDFS architecture
+===================
+Data Blocks: 64MB in Gen1 , 128MB in Gen2
+
+file1.txt ===> 192MB  ------ Gen1 System 
+
+No of blocks: 192/64 = 4 ( 3 = 64MB; 1 = 5MB)
+
+HDFS operations:
+
+	- HDFS cannot perform random read/write
+
+	a) Read Operation
+	b) Write Operation
+
+
+Write Operation
+	
+	1) Client request the namenode for uploading the file in HDFS ( copyFromLocal command)
+		
+		copyFromLocal ( filename, filesize, start offset, end offset )
+
+	2) Namenode reads the parameter and first check whether file can be accommodated in the drive. If yes, the NN will convert the offsets into block offset.
+
+		file1.txt (
+				b1 --> 0,63,DN1
+				b2 --> 64,127,DN2
+			)
+
+
+		Block Placement Strategy -----> Shortest Path Algorithm
+						Load Balancing Algo (Dijkstra)
+
+
+	3) Client gets the ack from the Namenode regarding block placement and the same is implemented by the client system.
+		
+		a) Client creates a logical pipeline between himself and respective 		datanodes and transfers the actual data in the form of bytes.
+
+		b) Once the DNs receive the data, it acks the NN about the data and 		crc using heartbeat mechanism
+
+
+	4) Now NN will check the complaince of the data with its settings. ( 		Replication Factor and 	Block Size)
+
+		Block Size = 64MB  ---- correct
+
+		RF = 2 -- not compliant , therefore (1)
+		
+		NN will change the index info as  ----------------(1)
+	
+		file1.txt (
+				b1 --> 0,63,DN1,DN2
+				b2 --> 64,127,DN2,DN3
+			)
+
+
+Setting the replication factor and Block size ( Realtime )
+------------------------------------------------------------
+
+1) On the NN system open hdfs-site.xml
+
+	vi /home/hadoop/hadoop/conf/hdfs-site.xml
+
+	dfs.replication = 1
+	dfs.block.size = 134217728  (128MB ->  128*1024*1024 bytes)
+
+	<property>
+		<name>dfs.replication</name>
+		<value>1</value>
+	</property>
+		
+	<property>
+		<name>dfs.block.size</name>	
+		<value>134217728</value>
+	</property>
+
+
+2) To test the changes, upload a file in HDFS using copyFromLocal command
+
+	hadoop fs -copyFromLocal /home/hadoop/sample /newdata/sample
+	
+   and check the WEB UI for observing the changes.
+
+
+
+To change the replication factor in realtime
+==========================================
+
+hadoop fs -setrep 1 /newdata/sample ---- To file
+
+hadoop fs -setrep 1 /foldername ------------ To folder
+
+
+HDFS Read Operation
+======================
+
+1) Client request the data from the NN 
+	
+	copyToLocal ( filelocation(HDFS LOCATION) ,destnlocaTION (Linux Location))
+
+	hadoop fs -copyToLocal /data/sample /home/hadoop/sample2
+
+2) Namenode will check edits and fsimage file for the indexes and if index present, it will fetch the    information and passes it to the Client and respective datanodes.
+
+	(filename, (DN1,23,26) , (DN2,24,25) )
+
+3) Client based on indexes will create a logical pipeline between himself and the respective datanodes and perform a pull operation to get the data in the local system.
+
+
+
+
+
+
+
+Pre-requisite Task 
+========================================================
+
+1) Create a 3 node cluster with the following specification:
+	
+	Node1 - NN,JT,SNN
+	Node2 - DN,TT
+	Node3 - DN,TT
+
+2) Try accessing Cluster 2 from Cluster 1
+
+
+	hadoop fs -ls hdfs://cluster2_NN:port
+
+3) Upload file from Cluster1 to Cluster2
+
+	hadoop fs -copyFromLocal samplewords hdfs://cluster2_NN:port/directorystructure
+
+4) Distcp
+
+	hadoop distcp sourcefile destinationfile
+
+
+Adding Nodes in Multinode cluster in Realtime
+==================================
+
+1) Started Hadoop4
+
+2) Delete and recreated
+
+	rm -rf hdfsdrive
+	mkdir hdfsdrive
+
+3) Ensure core-site.xml and mapred-site.xml is pointing to the correct master system.
+
+4) Started DataNode and Tasktracker
+
+	hadoop-daemon.sh start datanode
+	hadoop-daemon.sh start tasktracker
+
+5) Balance and commit the cluster
+
+	start-balancer.sh
+	
+Open slaves file in Namenode ssystem and add the IP of new Datanode
+
+
+Decommissioning DataNodes ( Realtime )
+-----------------------------------------
+1) Create a new file named remove and added the IP of DN which is to be decommissioned.
+
+2) Open hdfs-site.xml in NN and type the following confign:
+
+
+<property>
+	<name>dfs.hosts.exclude</name>	
+	<value>/home/hadoop/remove</value>
+</property>
+
+3) Refresh your Hadoop Cluster
+
+	hadoop dfsadmin -refreshNodes
+
+	
+Installing Hadoop Gen2 in Pseudo DS Mode
+==========================================
+
+Installing Hadoop 2.7.2 in Pseudo DS mode
+============================================
+1) Update the OS
+
+	sudo apt-get update
+
+
+2) Install Oracle Java 7
+
+Option1: ( Requires Internet Connection)
+---------
+sudo apt-get install software-properties-common python-software-properties	
+
+sudo add-apt-repository ppa:webupd8team/java
+
+sudo apt-get update
+
+sudo apt-get install oracle-java7-installer
+
+Option2: ( Can be done offline if there exists installer )
+--------
+a) Download the tar file for Java7 from official oracle website. Ensure you have oracle account if incase it redirects to the login page.
+
+	http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
+	
+	Linux x64
+	
+	Backup Link: http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.tar.gz?AuthParam=1443339500_db3626d24831a7720525b6e641198885
+	
+b) Copy the tar file in /usr/local/java
+
+	sudo mkdir /usr/local/java
+	 
+	sudo cp -r jdk-7u79-linux-x64.tar.gz /usr/local/java/.
+	
+	sudo update-alternatives --install "/usr/bin/java" "java" "/usr/local/java/jdk1.7.0_79/bin/java" 1
+	 
+	sudo update-alternatives --install "/usr/bin/javac" "javac" "/usr/local/java/jdk1.7.0_79/bin/javac" 1
+
+	sudo update-alternatives --install "/usr/bin/jps" "jps" "/usr/local/java/jdk1.7.0_79/bin/jps" 1
+
+
+
+3) Verify whether Java is installed or not
+
+
+java -version
+
+
+
+4) Download hadoop 
+
+wget http://apache.cs.utah.edu/hadoop/common/hadoop-2.7.2/hadoop-2.7.2.tar.gz
+
+
+5) Untar the Hadoop
+
+tar -xvzf hadoop-2.7.2.tar.gz
+
+6) Rename the extracted hadoop folder
+
+ mv hadoop-2.7.2 hadoop2
+
+7)Open bashrc and setup the dependency and environment variables.
+
+ vi .bashrc
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_INSTALL=/home/hadoop/hadoop2
+export PATH=$PATH:$HADOOP_INSTALL/bin
+export PATH=$PATH:$HADOOP_INSTALL/sbin
+export HADOOP_MAPRED_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=$HADOOP_INSTALL
+export YARN_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_INSTALL/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_INSTALL/lib"
+export HADOOP_CONF_DIR=$HADOOP_INSTALL/etc/hadoop
+export YARN_CONF_DIR=$HADOOP_INSTALL/etc/hadoop
+export PATH=$PATH:$HADOOP_CONF_DIR/bin
+export PATH=$PATH:$YARN_CONF_DIR/sbin
+
+Step 8: Update the bash
+
+exec bash
+
+Step 9: Configure Java with Hadoop
+
+vi /home/hadoop/hadoop2/libexec/hadoop-config.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+
+
+Step 10: Setup YARN Environments.
+
+vi /home/hadoop/hadoop2/etc/hadoop/yarn-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_HOME=/home/hadoop/hadoop2
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export YARN_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin
+
+Step 11: Setup Hadoop Environments
+
+vi /home/hadoop/hadoop2/etc/hadoop/hadoop-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_INSTALL=/home/hadoop/hadoop2
+export PATH=$PATH:$HADOOP_INSTALL/bin
+export PATH=$PATH:$HADOOP_INSTALL/sbin
+export HADOOP_MAPRED_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=$HADOOP_INSTALL
+export YARN_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_INSTALL/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_INSTALL/lib"
+
+
+Step 12: Setup Core-site.xml
+
+vi /home/hadoop/hadoop2/etc/hadoop/core-site.xml
+
+<property>
+<name>fs.default.name</name>
+<value>hdfs://node1:8020</value>
+<final>true</final>
+</property>
+ <property>
+<name>hadoop.proxyuser.hadoop.hosts</name>
+<value>localhost</value>
+</property>
+<property>
+<name>hadoop.proxyuser.hadoop.groups</name>
+<value>users</value>
+</property>
+<property>
+<name>hadoop.tmp.dir</name>
+<value>/home/hadoop/hdfsdrive</value>
+</property>
+
+
+Step 11: Setup mapred-site.xml
+
+cp /home/hadoop/hadoop2/etc/hadoop/mapred-site.xml.template /home/hadoop/hadoop2/etc/hadoop/mapred-site.xml
+
+vi /home/hadoop/hadoop2/etc/hadoop/mapred-site.xml
+
+<property>
+<name>mapreduce.framework.name</name>
+<value>yarn</value>
+</property> 
+
+
+<property>
+<name>mapred.child.java.opts</name>
+<value>-Xmx400m</value>
+</property>
+
+Step 12: Create necessary directories and assign ownerships
+
+ mkdir /home/hadoop/hdfsdrive 
+ 
+
+Step 13: Configure hdfs-site.xml
+exec bash
+
+vi /home/hadoop/hadoop2/etc/hadoop/hdfs-site.xml
+
+
+
+<property>
+<name>dfs.replication</name>
+<value>1</value>
+</property>
+
+<property>
+<name>dfs.permissions</name>
+<value>false</value>
+</property>
+
+Step 14: Setup yarn-site.xml 
+
+sudo vi $HADOOP_CONF_DIR/yarn-site.xml
+
+<property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+
+
+
+Step 15: Format the Namenode
+
+hadoop namenode -format
+
+Step 16: Start hadoop services 
+
+hadoop-daemon.sh start namenode
+hadoop-daemons.sh start datanode
+yarn-daemon.sh start resourcemanager
+yarn-daemons.sh start nodemanager
+mr-jobhistory-daemon.sh start historyserver
+
+
+Step 17:To stop Hadoop services.
+
+mr-jobhistory-daemon.sh stop historyserver
+yarn-daemons.sh stop nodemanager
+yarn-daemons.sh stop resourcemanager
+hadoop-daemon.sh stop datanode
+hadoop-daemon.sh stop namenode
+
+
+
+NamenOde -- 50070
+
+YARN ------ 8088
+
+
+Creating a Fully-Distributed Cluster for Hadoop Gen2
+=====================================================
+3node cluster
+=============
+
+Node 1 - NN, RM -- resourcemanager ( master )
+Node 2 - DN, NM -- nodemanager ( slave )
+Node 3 - DN, NM
+
+
+Step 1: Clone the machines.
+
+Step 2: Setup hosts file & hostname for individual systems ( All 3 systems )
+
+In each machine, 
+
+sudo vi /etc/hostname 
+
+master ( for machine1 ) ; slave1 ( for machine2); slave2 (for machine3)
+
+
+sudo vi /etc/hosts
+
+Delete the line 127.0.1.1
+
+
+192.168.31.234	master
+192.168.31.235	slave1
+192.168.31.236	slave2
+
+
+
+sudo init 6 ( Restart the system )
+
+
+Verify hosts file settings using,
+
+ping master
+ping slave1
+ping slave2
+
+Step 3: Setup passwordless setup for machines ( to be performed in master1)
+ssh-keygen
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@master
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@slave1
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@slave2
+
+Step 4: Delete and recreate the hdfsdrive folder. ( to be performed in all systems)
+
+rm -r /home/hadoop/hdfsdrive
+mkdir /home/hadoop/hdfsdrive
+
+Extract hadoop-2.7.2 , rename the extracted folder as hadoop2.
+
+tar -xvzf hadoop-2.7.2.tar.gz
+
+mv hadoop-2.7.2 hadoop2
+
+Step 5: Setup NameNode service ( Done in all the systems )
+
+sudo vi /home/hadoop/hadoop2/etc/hadoop/core-site.xml
+
+<property>
+<name>fs.default.name</name>
+<value>hdfs://master:8020</value>
+<final>true</final>
+</property>
+
+ <property>
+<name>hadoop.proxyuser.hadoop.hosts</name>
+<value>master</value>
+</property>
+<property>
+<name>hadoop.proxyuser.hadoop.groups</name>
+<value>users</value>
+</property>
+<property>
+<name>hadoop.tmp.dir</name>
+<value>/home/hadoop/hdfsdrive</value>
+</property>
+
+
+
+To replicate the same in remaining systems, use scp 
+
+ scp /home/hadoop/hadoop2/etc/hadoop/core-site.xml hadoop@slave1:/home/hadoop/hadoop2/etc/hadoop/core-site.xml
+
+ scp /home/hadoop/hadoop2/etc/hadoop/core-site.xml hadoop@slave2:/home/hadoop/hadoop2/etc/hadoop/core-site.xml
+
+
+
+
+
+
+Step 6: Setup mapred-site.xml in all the machines.
+
+sudo vi /home/hadoop/hadoop2/etc/hadoop/mapred-site.xml
+
+<property>
+<name>mapreduce.framework.name</name>
+<value>yarn</value>
+</property> 
+
+<property>
+<name>mapred.child.java.opts</name>
+<value>-Xmx400m</value>
+<!-- Not marked as final so jobs can include JVM debugging options -->
+</property>
+
+
+
+Step 7: Setup hdfs-site.xml in NameNode machine only.
+
+
+sudo vi $HADOOP_CONF_DIR/hdfs-site.xml
+
+<property>
+<name>dfs.replication</name>
+<value>1</value>
+</property>
+
+<property>
+<name>dfs.permissions</name>
+<value>false</value>
+</property>
+
+
+Step 8: Setup yarn-site.xml ( To be performed in all the systems )
+
+sudo vi $HADOOP_CONF_DIR/yarn-site.xml
+
+<property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+  </property>
+
+<property>
+    <name>yarn.resourcemanager.resource-tracker.address</name>
+    <value>master:8025</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.scheduler.address</name>
+    <value>master:8030</value>
+  </property>
+  <property>
+    <name>yarn.resourcemanager.address</name>
+    <value>master:8040</value>
+  </property>
+
+
+Step 9- Setup slaves files. ( To be performed in NN system )
+
+vi $HADOOP_CONF_DIR/slaves
+slave1
+slave2
+
+
+Step 10 - Enabling WebHDFS( optional step however not required in 2.6.x or later)
+
+hdfs-site.xml
+-----------------
+<property>
+<name>dfs.webhdfs.enabled</name>
+<value>true</value>
+</property>
+
+Step 11- Perform namenode format ( only in the NN system )
+
+hadoop namenode -format
+
+Step 12: Start Hadoop services
+
+hadoop-daemon.sh start namenode
+hadoop-daemons.sh start datanode
+yarn-daemon.sh start resourcemanager
+yarn-daemons.sh start nodemanager
+mr-jobhistory-daemon.sh start historyserver
+
+
+Stopping the daemons
+
+mr-jobhistory-daemon.sh stop historyserver
+yarn-daemons.sh stop nodemanager
+yarn-daemon.sh stop resourcemanager
+hadoop-daemons.sh stop datanode
+hadoop-daemon.sh stop namenode
+
+Zookeeper
+---------
+
+1) Download, install and configure Zookeeper
+
+wget http://www.eu.apache.org/dist/zookeeper/stable/zookeeper-3.4.6.tar.gz
+
+
+tar -xvzf zookeeper-3.4.6.tar.gz 
+
+sudo vi zookeeper-3.4.6/conf/zoo.cfg
+
+tickTime=2000
+clientPort=2181
+initLimit=5
+syncLimit=2
+dataDir=/home/hadoop/zookeeper-3.4.6/data
+dataLogDir=/home/hadoop/zookeeper-3.4.6/logs
+server.1=master:2888:3888
+server.2=slave1:2888:3888
+server.3=slave2:2888:3888
+
+
+2) Create necessary folders for zookeeper and assign ownerships
+
+sudo mkdir -p /home/hadoop/zookeeper-3.4.6/data
+sudo mkdir -p /home/hadoop/zookeeper-3.4.6/logs
+sudo chown hadoop /home/hadoop/zookeeper-3.4.6/data/
+sudo chown hadoop /home/hadoop/zookeeper-3.4.6/logs/
+
+3) Create myid file in /home/hadoop/zookeeper-3.4.6/data and assign value like master as 1, slave1 as 2 and slave2 as 3.
+
+sudo vi /home/hadoop/zookeeper-3.4.6/data/myid
+1
+
+sudo vi /home/hadoop/zookeeper-3.4.6/data/myid
+2
+
+sudo vi /home/hadoop/zookeeper-3.4.6/data/myid
+3
+
+4) Start zookeeper on all nodes(master,slave1,slave2) and check the status
+
+cd zookeeper-3.4.6
+bin/zkServer.sh start
+bin/zkServer.sh status
+
+High Availability Guide
+========================
+
+NameNode & Resource Manager HA Step by Step Guide From Scratch
+----------------------------------------------------------------
+
+1) Setup Hosts file in all the 3 systems
+
+sudo vi /etc/hosts
+
+172.16.23.210	master1
+172.16.23.211	slave1
+172.16.23.212	slave2
+172.16.23.213	slave3
+172.16.23.214	slave4
+
+2) Generate keys and perform password-less setup on master1
+
+ssh-keygen ( Press Enter 4 times blindly )
+
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@master1
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@master2
+ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@dn1
+
+3) Update all 3 systems
+
+sudo apt-get update
+
+4) Install Oracle Java7
+
+sudo apt-get install software-properties-common python-software-properties
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java7-installer
+
+5) Download Hadoop 2.6.0
+
+wget http://apache.mirrors.pair.com/hadoop/common/hadoop-2.6.0/hadoop-2.6.0.tar.gz
+
+6) Extract the Hadoop folder and rename the same
+
+tar -xvzf hadoop-2.7.2.tar.gz
+
+mv hadoop-2.7.2 hadoop
+
+7) Setup .bashrc
+
+vi /home/hadoop/.bashrc
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_INSTALL=/home/hadoop/hadoop2
+export PATH=$PATH:$HADOOP_INSTALL/bin
+export PATH=$PATH:$HADOOP_INSTALL/sbin
+export HADOOP_MAPRED_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=$HADOOP_INSTALL
+export YARN_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_INSTALL/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_INSTALL/lib"
+export HADOOP_CONF_DIR=$HADOOP_INSTALL/etc/hadoop
+export YARN_CONF_DIR=$HADOOP_INSTALL/etc/hadoop
+export PATH=$PATH:$HADOOP_CONF_DIR/bin
+export PATH=$PATH:$YARN_CONF_DIR/sbin
+
+8) Update bash
+
+exec bash
+
+9) Setup hadoop config
+
+vi /home/hadoop/hadoop2/libexec/hadoop-config.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+
+10) Setup YARN env
+
+sudo vi /home/hadoop/hadoop2/etc/hadoop/yarn-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_HOME=/home/hadoop/hadoop
+export HADOOP_MAPRED_HOME=$HADOOP_HOME
+export HADOOP_COMMON_HOME=$HADOOP_HOME
+export HADOOP_HDFS_HOME=$HADOOP_HOME
+export YARN_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export YARN_CONF_DIR=$HADOOP_HOME/etc/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin
+
+11) Setup Hadoop Env
+
+sudo vi /home/hadoop/hadoop2/etc/hadoop/hadoop-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle/
+export HADOOP_INSTALL=/home/hadoop/hadoop
+export PATH=$PATH:$HADOOP_INSTALL/bin
+export PATH=$PATH:$HADOOP_INSTALL/sbin
+export HADOOP_MAPRED_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_HOME=$HADOOP_INSTALL
+export HADOOP_HDFS_HOME=$HADOOP_INSTALL
+export YARN_HOME=$HADOOP_INSTALL
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_INSTALL/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_INSTALL/lib"
+
+
+12) Setup core-site.xml
+
+
+vi /home/hadoop/hadoop2/etc/hadoop/core-site.xml
+
+<property>
+	<name>fs.defaultFS</name>
+	<value>hdfs://mycluster</value>
+	<final>true</final>
+</property>
+<property>
+	<name>hadoop.tmp.dir</name>
+	<value>/home/hadoop/hdfsdrive</value>
+</property>
+<property>
+	<name>hadoop.proxyuser.hadoop.hosts</name>
+	<value>localhost</value>
+</property>
+<property>
+	<name>hadoop.proxyuser.hadoop.groups</name>
+	<value>users</value>
+</property>
+<property>
+	<name>dfs.journalnode.edits.dir</name>
+	<value>/home/hadoop/journal/node/local/data</value>
+</property>
+
+
+13) Delete and recreate hdfsdrive folder (ALL the systems )
+
+rm -rf hdfsdrive
+mkdir hdfsdrive
+
+
+14) Setup hdfs-site.xml ( in all journal nodes and all NN systems)
+
+
+sudo vi /home/ubuntu/hadoop/etc/hadoop/hdfs-site.xml
+
+
+<property>
+	<name>dfs.replication</name>
+	<value>1</value>
+</property>
+
+<property>
+	<name>dfs.permissions</name>
+	<value>false</value>
+</property>
+
+<property>
+	<name>dfs.webhdfs.enabled</name>
+	<value>true</value>
+</property>
+
+<property>
+	<name>dfs.nameservices</name>
+	<value>mycluster</value>
+	<final>true</final>
+</property>
+<property>
+	<name>dfs.ha.namenodes.mycluster</name>
+	<value>master1,master2</value>
+	<final>true</final>
+</property>
+<property>
+	<name>dfs.namenode.rpc-address.mycluster.master1</name>
+	<value>master:8020</value>
+</property>
+<property>
+	<name>dfs.namenode.rpc-address.mycluster.master2</name>
+	<value>slave1:8020</value>
+</property>
+<property>
+	<name>dfs.namenode.http-address.mycluster.master1</name>
+	<value>master:50070</value>
+</property>
+<property>
+	<name>dfs.namenode.http-address.mycluster.master2</name>
+	<value>slave2:50070</value>
+</property>
+<property>
+	<name>dfs.namenode.shared.edits.dir</name>
+	<value>qjournal://master:8485;slave1:8485;slave2:8485/mycluster</value>
+</property>
+<property>
+	<name>dfs.ha.automatic-failover.enabled</name>
+	<value>true</value>
+</property>
+<property>
+	<name>ha.zookeeper.quorum</name>
+	<value>master:2181,slave1:2181,slave2:2181</value>
+</property>
+<property>
+	<name>dfs.ha.fencing.methods</name>
+	<value>sshfence</value>
+</property>
+<property>
+	<name>dfs.ha.fencing.ssh.private-key-files</name>
+	<value>/home/hadoop/.ssh/id_rsa</value>
+</property>
+<property>
+	<name>dfs.ha.fencing.ssh.connect-timeout</name>
+	<value>3000</value>
+</property>
+<property>
+	<name>dfs.client.failover.proxy.provider.mycluster</name>
+	<value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+</property>
+
+14) Generate mapred-site.xml
+
+sudo cp hadoop2/etc/hadoop/mapred-site.xml.template hadoop2/etc/hadoop/mapred-site.xml
+
+15) Setup mapred-site.xml
+
+<property>
+	<name>mapreduce.framework.name</name>
+	<value>yarn</value>
+</property>
+<property>
+	<name>mapred.child.java.opts</name>
+	<value>-Xmx400m</value>
+	<!-- Not marked as final so jobs can include JVM debugging options -->
+</property>
+
+16) Setup yarn-site.xml for ResourceManager HA
+
+<property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+</property>
+<property>
+    <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+    <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.ha.enabled</name>
+   <value>true</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.cluster-id</name>
+   <value>mycluster</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.ha.rm-ids</name>
+   <value>rm1,rm2</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.hostname.rm1</name>
+   <value>master</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.hostname.rm2</name>
+   <value>slave1</value>
+</property>
+<property>
+   <name>yarn.resourcemanager.zk-address</name>
+   <value>master:2181,slave1:2181,slave2:2181</value>
+</property>
+<property>
+    <name>yarn.resourcemanager.webapp.address.rm1</name>
+    <value>master:9026</value>
+</property>
+<property>
+    <name>yarn.resourcemanager.webapp.address.rm2</name>
+    <value>slave1:9026</value>
+</property>
+<property>
+    <name>yarn.resourcemanager.recovery.enabled</name>
+    <value>true</value>
+</property>
+<property>
+    <name>yarn.resourcemanager.store.class</name>
+    <value>org.apache.hadoop.yarn.server.resourcemanager.recovery.ZKRMStateStore</value>
+</property>
+<property>
+   <name>yarn.client.failover-proxy-provider</name>
+   <value>org.apache.hadoop.yarn.client.ConfiguredRMFailoverProxyProvider</value>
+</property>
+
+
+17) Also update the slaves files (Only in NN - master & slave1)
+
+	vi /home/hadoop/hadoop2/etc/hadoop/slaves
+	
+	slave2
+	slave3
+	slave4
+
+
+18) Download, install and configure Zookeeper
+
+wget http://www.interior-dsgn.com/apache/zookeeper/zookeeper-3.4.6/zookeeper-3.4.6.tar.gz
+
+tar -xvzf zookeeper-3.4.6.tar.gz 
+
+sudo vi zookeeper-3.4.6/conf/zoo.cfg
+
+tickTime=2000
+clientPort=2181
+initLimit=5
+syncLimit=2
+dataDir=/home/hadoop/zookeeper-3.4.6/data
+dataLogDir=/home/hadoop/zookeeper-3.4.6/logs
+server.1=master1:2888:3888
+server.2=master2:2889:3889
+server.3=dn1:2890:3890
+
+19) Create necessary folders for zookeeper and assign ownerships
+
+mkdir -p /home/hadoop/zookeeper-3.4.6/data
+mkdir -p /home/hadoop/zookeeper-3.4.6/logs
+
+20) Create myid file in /home/ubuntu/zookeeper-3.4.6/data and assign value like master1 as 1, master2 as 2 and dn1 as 3.
+
+vi /home/hadoop/zookeeper-3.4.6/data/myid
+1
+
+vi /home/hadoop/zookeeper-3.4.6/data/myid
+2
+
+vi /home/hadoop/zookeeper-3.4.6/data/myid
+3
+
+21) Start zookeeper on all nodes(master1,master2,dn1) and check the status
+
+cd zookeeper-3.4.6
+bin/zkServer.sh start
+bin/zkServer.sh status
+
+jps
+
+kill -9 pid
+
+
+
+22) Format and Configure Zookeeper Failover Controller Mechanism ( On Master1 Only)
+
+hdfs zkfc -formatZK
+
+23) Create necessary folders for Journal Node settings
+
+mkdir -p /home/hadoop/journal/node/local/data
+
+
+24) Start Journal Nodes on all 3 systems ( master1, master2, dn1 )
+
+hadoop-daemon.sh start journalnode
+
+25) Format HDFS file system
+
+hdfs namenode -format (Only on master1)
+
+26) On Primary namenode start namenode service (master1)
+
+hadoop-daemon.sh start namenode
+
+27) On master2 perform bootstrap for standby namenode service
+
+hdfs namenode -bootstrapStandby
+
+28) Stop hadoop services in master1
+
+stop-all.sh ( Ignore all the errors that might emit here )
+
+28.1) Copy the private rsa key in the NN2
+
+scp /home/hadoop/.ssh/id_rsa hadoop@slave1:/home/hadoop/.ssh/.
+
+
+
+
+29) Start hdfs services in master1
+
+start-dfs.sh
+
+30) Start ResourceManager service manually in master1 and master2
+
+yarn-daemon.sh start resourcemanager
+
+31) Start NodeManager service in master1
+
+yarn-daemon.sh start nodemanager
+
+32)We can use the following commands to get resource manager HA state.
+
+yarn rmadmin -getServiceState rm1
+active
+
+yarn rmadmin -getServiceState rm2
+standby
+
+33) We can use the following commands to get NN HA state.
+
+hdfs haadmin -getServiceState master1
+active
+
+hdfs haadmin -getServiceState master2
+standby
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,363 @@
+Hadoop Training
+-----------------
+
+Working with Pig
+=================
+
+Installation of Pig
+--------------------
+
+1) Extract the tar file
+
+	tar -xvzf pig-0.15.0.tar.gz
+
+2) Rename the extracted folder 
+
+	mv pig-0.15.0 pig
+
+3) Update the bash and set the env for Apache pig
+
+	vi .bashrc
+	
+	export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+	export PIG_PREFIX=/home/hadoop/pig
+	export PATH=$PATH:$PIG_PREFIX/bin
+
+4) Execute the bash
+
+	exec bash
+
+
+
+
+Why Pig?
+
+- Pig internally uses MR paradigm for its execution.
+- It was developed by YAHOO for their mainframe engineers.
+- Its a wrapper on MR.
+- Best for those anaylst who hate programming
+
+Pig COde( PIG LATIN ) ----> Converts LATIN to Bytecode ---> JAR ---> Submit to Hadoop Cluster ----> Execute the JAR ---> Output is given to Pig ---> Pig Process the output and emits either in a file or shell.
+
+			
+
+				Pig
+				 |
+	-------------------------------------------------
+	|		|				|
+Local Mode		MapReduce Mode			Tez Mode
+( Execution done 	( Execution done using		( Using DAG
+using local 		Hadoop Cluster Resources)	for execn)
+resources )			
+
+
+
+1) LOADING AND STORING.
+2) STRING TOKENIZATION FUNCTION
+3) UNBAGING THE ELEMENTS
+4) TUPLE & BAG
+5) GROUP in Pig
+6) COUNT in Pig
+7) SORT in Pig
+
+8) FILTER in Pig
+9) CREATE CUSTOM FIELDS in Pig
+
+pig -x local ( To start pig in local mode )
+
+Example 1 - WOrd Count
+========================
+
+mylist = LOAD '/home/hadoop/samplewords' USING PigStorage() AS (sentences:chararray);
+mywords = FOREACH mylist GENERATE FLATTEN(TOKENIZE(sentences)) as word;
+mygroup = GROUP mywords by word;
+mycount = FOREACH mygroup GENERATE group as dwords,COUNT(mywords) as dcount;
+mysort = ORDER mycount by dcount;
+
+dump mysort;
+	-OR-
+STORE mysort INTO '/home/hadoop/Output/Pig/WC';
+
+
+Find all employees who earn more than 50K?
+empdata
+select * from empdata where esal > 50K
+
+empdata = LOAD '/home/hadoop/sample1' USING PigStorage(',') AS (eid:int,ename:chararray,ecity:chararray,esal:int);
+
+empfilter = FILTER empdata by esal > 50000;
+
+empfinal = FOREACH empfilter GENERATE ename,ecity;
+
+
+Find all employees who stay in Mumbai?
+
+empdata = LOAD '/home/hadoop/sample1' USING PigStorage(',') AS (eid:int,ename:chararray,ecity:chararray,esal:int);
+
+empfilter = FILTER empdata by ecity == 'BOM';
+
+Txnid	Date	Custid	Amount	Category	SubCategory	State	City	Type
+
+
+
+empjoin = JOIN empdata by eid,emphobby by eid;
+
+Task 1
+======
+Find the total revenue generated based on category?
+Find the total number of transactions done by credit card?
+Find the total number of Doctors who are interested in Exercise and Fitness?
+
+
+
+			Pig Programs
+			     |
+	--------------------------------------------
+	|					   |
+Static Program				Parameter-based program
+
+
+Example for Static Program:
+---------------------------
+
+1) Create a file named WordCount.pig and add the following code:
+
+dataset = LOAD '/home/hadoop/sample2' USING PigStorage() AS (lines:chararray);
+words = FOREACH dataset GENERATE FLATTEN(TOKENIZE(lines)) as mywords;
+mygroup = GROUP words by mywords;
+mycount = FOREACH mygroup GENERATE group as dwords, COUNT(words) as dcount;
+STORE mycount INTO '/home/hadoop/OutputPigProgram/WC1';
+
+
+2) To execute the file in local mode:
+
+	pig -x local /home/hadoop/WordCount.pig
+
+
+Example for Dynamic/Parameter-based Program:
+---------------------------------------------
+
+1) Create a file named WordCountDynamic.pig and add the following code:
+
+dataset = LOAD '$input' USING PigStorage() AS (lines:chararray);
+words = FOREACH dataset GENERATE FLATTEN(TOKENIZE(lines)) as mywords;
+mygroup = GROUP words by mywords;
+mycount = FOREACH mygroup GENERATE group as dwords, COUNT(words) as dcount;
+mysort = ORDER mycount by dcount $myorder;
+STORE mysort INTO '$output';
+
+
+2) To execute the file in local mode with parameters:
+
+pig -x local -param input=/home/hadoop/sample2 -param output=/home/hadoop/PigOutput/Dynamic1 -param myorder=DESC /home/hadoop/WordCountDynamic.pig
+
+
+
+
+Hive
+=====
+
+Hive a data warehousing tool.
+
+				
+
+				Hive
+				 |
+		----------------------------------------
+		|		|			|
+	Default Datastore	Processing		Storage Part
+	(Metastore)		(MR, Tez)		(HDFS,UFS)
+	(MySQL,Oracle etc)
+	(Java Compliant - Java Driver)
+
+
+Step1: Install MySQL in Gen1
+
+
+	sudo apt-get install mysql-server
+
+	mysql -u root -p123456
+
+Step 2: Download the stable version of Hive ( apache-hive-1.2.0 )
+
+wget http://apache.mesi.com.ar/hive/stable/apache-hive-1.2.0-bin.tar.gz
+
+
+2) Untar the same
+
+tar -xvzf apache-hive-1.2.1-bin.tar.gz
+
+3) Rename the extracted folder
+
+mv apache-hive-* hive
+
+
+4) Inform your system about hive
+
+sudo vi .bashrc
+
+export HIVE_PREFIX=/home/hadoop/hive
+export PATH=$PATH:$HIVE_PREFIX/bin
+export PATH=$PATH:$HIVE_PREFIX/conf
+
+
+Save it !!!
+
+
+5)Update the bash and change the ownership of the folders
+
+exec bash
+
+
+
+5.5) Install Mysql server
+
+	sudo apt-get install mysql-server.
+
+6) Create configuration files
+
+	a) Setup hive-env.sh
+
+sudo cp -r /home/hadoop/hive/conf/hive-env.sh.template /home/hadoop/hive/conf/hive-env.sh
+
+	export HADOOP_HOME=/home/hadoop/hadoop
+	export HIVE_CONF_DIR=/home/hadoop/hive/conf
+
+	
+	b) Setup hive-site.xml
+
+sudo vi /home/hadoop/hive/conf/hive-site.xml 
+
+<configuration>
+<property>
+<name>javax.jdo.option.ConnectionURL</name>
+<value>jdbc:mysql://localhost:3306/hivemetadb?createDatabaseIfNotExist=true</value>
+</property>
+
+<property>
+<name>javax.jdo.option.ConnectionDriverName</name>
+<value>com.mysql.jdbc.Driver</value>
+</property>
+
+<property>
+<name>javax.jdo.option.ConnectionUserName</name>
+<value>root</value>
+</property>
+
+<property>
+<name>javax.jdo.option.ConnectionPassword</name>
+<value>123456</value>
+</property>
+</configuration>
+ 
+
+
+
+	c) Copy the driver file of MySQL in /home/hadoop/hive/lib
+
+Download from http://dev.mysql.com/downloads/connector/
+
+(Select ConnectorJ , Select Platform as Platform Independent - tar file) 
+
+
+
+7) Create folders and grant proper write permissions in HDFS
+
+
+hadoop fs -mkdir /tmp
+hadoop fs -mkdir /tmp/hive
+hadoop fs -chmod 777 /tmp/hive
+
+8) Start Hive by typing 'hive' and Press Enter.
+
+hive
+
+
+
+
+
+
+			Hive Tables
+				|
+	--------------------------------------------
+	|					    |
+Internal Table 					External Table
+Data is owned by Hive				Data is owned by HDFS
+Metadata is owned by Hive			Metadata is owned by Hive
+Storing Views(Results)				(Processing Master Dataset)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+show databases;
+
+create database test;
+
+use test;
+
+create table employee
+(empid int,
+ename STRING,
+esal int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n';
+
+SHOW tables;
+select * from employee;
+LOAD DATA LOCAL INPATH '/home/hadoop/sample3' INTO TABLE employee;
+select * from employee;
+select ename from employee where esal > 5000;
+quit;
+
+create external table employee4
+(empid int,
+ename STRING,
+esal int)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+LOCATION '/mynewdata';
+
+
+!hadoop fs -mkdir /mynewdata;
+
+!hadoop fs -copyFromLocal sample3  /mynewdata/sample3;
+
+select * from employee4;
+
+
+
+
+
+Task Set for Hive
+-----------------
+
+1) Find the total number of transactions done by cash?
+
+2) Find the total revenue generated based on category?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

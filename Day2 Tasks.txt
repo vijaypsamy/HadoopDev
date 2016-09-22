@@ -1,0 +1,98 @@
+Perform the following tasks:
+
+1. Create a clone of the Gen1 single node cluster.
+
+2. Setup the hosts file as per the following spec:
+
+	Hostname: mytask
+	Hosts file: 
+		IP_ADD	mytask
+
+3. Start Hadoop Services and Upload the sample file in /taskdata/sample HDFS location.
+
+4. Upgrade the Gen1 cluster to Gen2 cluster ensuring no data loss in HDFS location. Steps for the same will be provided.
+
+
+5. Verify the data by displaying the data in the console.
+
+
+
+Steps for Cluster Upgrade:
+---------------------------
+
+Hadoop Cluster Upgrade 
+========================
+
+Old Version Demo: hadoop-1.2.1
+New Version Demo: hadoop-2.7.2
+
+Scenario:
+
+We need to upgrade the existing Hadoop cluster manually without altering the existing HDFS storage.
+
+
+
+
+Hadoop HDFS upgrade
+====================
+0. Verify the current Hadoop version and start Hadoop services.
+
+	hadoop version
+
+	start-dfs.sh
+
+1. Start Hadoop HDFS services and Ensure there is no existing pending upgrades happening on the system.
+
+	hadoop dfsadmin -upgradeProgress status
+
+	hadoop fs -ls /
+
+	hadoop fs -copyFromLocal /home/hadoop/sample /data/sample
+
+	hadoop dfsadmin -report
+
+
+2. Maintain the report of the current HDFS 
+
+	hadoop fsck / -files -blocks -locations > dfs-v-old-fsck-1.log
+	hadoop dfs -lsr / > dfs-v-old-lsr-1.log
+	hadoop dfsadmin -report > dfs-v-old-report-1.log
+
+3. Stop Hadoop services.
+
+	stop-dfs.sh
+	
+4. Install Hadoop 2.7.2 
+
+5. Ensure you give different port numbers in fs.default.name and other parameters.
+
+6. Start the Upgrade Process
+	
+		hadoop-daemon.sh start namenode -upgrade  
+
+(This step will only upgrade the index and not the block's metadata)
+		
+7. Hadoop will start upgrading and will start the namenode service in Safemode 
+
+8. Perform the following command 
+
+	hadoop dfs -lsr / > dfs-v-new-lsr-0.log
+	
+   and compare with the dfs-v-new-lsr-0.log file
+   
+9. Start the HDFS clusterr
+
+	start-dfs.sh ( Note that your NameNode service will already be running )
+
+10. You will observe that the Datanodes will start exchanging the block information with the NN and NN will be out of Safemode within 30 seconds subject to the network bandwidth
+
+12. Perform checks
+
+	hdfs dfsadmin -report > dfs-v-new-report-1.log
+	hdfs dfs -lsr / > dfs-v-new-lsr-1.log
+	
+	and compare with the old files.
+	
+13. Finalize the upgrade using
+
+	hdfs dfsadmin -finalizeUpgrade

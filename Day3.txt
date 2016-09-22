@@ -1,0 +1,302 @@
+BigData TRaining
+================
+
+Trainer Name: Prashant Nair
+Trainer Email: prashant.nair2050@gmail.com
+
+
+Day 3
+------
+Understanding and Implementing Zookeeper
+Setting up Namenode HA
+MapReduce Paradigm
+MapReduce Implementations
+MapReduce Programming using Java
+WordCount
+Combiner
+Partitioners
+Distributed Cache
+Counters
+CustomInputFormat
+Gen2 Coding (YARN Based)
+
+
+
+
+
+
+
+				Hadoopv2
+				|
+	-----------------------------------------------------
+	|			|			   |
+	HDFS			MRv2			YARN
+						(Yet Another 
+						Resource Negotr)
+					
+
+YARN:
+-------
+- To decrease the responsibility of JobTracker
+- To involve multiple processing units in a single cluster 	(Reusability of Hardware)
+- To ensure no process consume the entire resources.
+					
+
+			YARN
+			  |
+	------------------------------------------
+	|					|
+ResourceManager				NodeManager
+(Identifying available Resources)		|
+	|				Fulfilling Req of RM & Ctr
+---------------------------------
+|				|
+AppMgr				Scheduler
+(Create AppMsr & Ctr)	  (Job Queuing)
+|
+----------------------------------
+|	     			|
+AppMsr	  			Ctr
+Monitor Ctrs			JAR file
+Maintains Processing Info	Block indexes
+Sync Ctrs
+Aggregation 
+
+
+
+
+
+MapReduce Paradigm
+==================
+Processing part of Hadoop. MR has 5 phases:
+
+a) Input Phase  ----------- Managed by Programmer
+b) Mapper Phase ----------- Managed by Programmer
+c) Sort/Shuffle Phase ----------- Managed by System
+d) Reducer Phase ----------- Managed by Programmer
+e) Output Phase ----------- Managed by Programmer
+
+WordCount Problem:
+-------------------
+5 node cluster ================> 3 DNs
+file1.txt ===> 192MB
+---------
+Hadoop Hadoop Hadoop ----------- B1,D1
+Hadoop is good good ------------ B2,D2
+Hadoop Spark Hadoop Spark ------ B3,D3
+
+
+hadoop jar /home/hadoop/hadoop.jar wordcount /data/words
+
+
+a) Input Phase: This phase is responsible to accept the data in the form of file and convert the contents of the file into its equivalent K,V pair. 
+
+			InputFormat
+			    |
+	        	TextInputFormat
+
+TextInputFormat
+
+	K = line number byte offset
+	V = line itself
+
+(1,Hadoop Hadoop Hadoop) -------- D1
+(2,Hadoop is good good) --------- D2
+(3,Hadoop Spark Hadoop Spark) ---- D3
+
+
+b) Mapper Phase: This phase is controlled by the programmer. The intention of this phase is to perform data conversion or data transformation.
+
+B.L. Convert sentences into words.
+
+D1			D2			D3
+
+(Hadoop,1)		(Hadoop,1)		(Hadoop,1)
+(Hadoop,1)		(is,1)			(Spark,1)
+(Hadoop,1)		(good,1)		(Hadoop,1)
+			(good,1)		(Spark,1)
+
+
+
+c) Sort/Shuffle Phase: This phase is an automated phase. Neither the programmer nor admin can control this phase.
+
+a) Sort Phase: Arranging the data in ascending order based on key part of K,V pair
+
+D1			D2			D3	
+(Hadoop,1)		(Hadoop,1)		(Hadoop,1)
+(Hadoop,1)		(good,1)		(Hadoop,1)
+(Hadoop,1)		(good,1)		(Spark,1)
+			(is,1)			(Spark,1)
+
+
+b) Shuffling Phase: Groupby based on Key
+
+D1			D2			D3
+(Hadoop,[1,1,1])	(Hadoop,1)		(Hadoop,1,1)
+			(good,1,1)		(Spark,1,1)
+			(is,1)
+
+
+
+
+
+d) Reducer Phase: This phase is controlled by the programmer. This phase is considered AS AN ACTION PHASE.
+
+B.L - Sum the value part of each key.
+
+a) Reducer at DN level:
+
+D1			D2			D3
+(Hadoop,3)-f		(Hadoop,1)-f		(Hadoop,2)-f
+			(good,2)-f		(Spark,2)-f
+			(is,1)-f
+
+b) Reducer at cluster Level:
+
+(Hadoop,6)
+(good,2)
+(is,1)
+(Spark,2)
+
+
+5) Output Phase: THis phase is responsible to accept the data in the form of K,V and convert it into a file.
+
+		OutputFormat
+			|
+		TextOutputFormat
+			
+It generates 3 objects:
+		
+	_SUCCESS -- 0KB file which ACK the Programmer that all 	blocks associated with the input file is processed 	successfully.	
+	
+	part-00000 -- The actual output in the form of TSV.
+
+	_logs folder -- This maintains the log of entire MR 			operations
+
+
+
+
+
+
+
+
+
+file2.txt
+
+I love Hadoop and Spark Programming.\n
+
+
+DN1		Dn2			Dn3
+I Love Hado	op and Spark P		rogramming.
+
+(1,I Love Hado) (1,op and Spark P)	(1,rogramming.)
+
+(I,1)			(and,1)
+(love,1)
+(Hadoop,1)
+
+
+
+
+
+Input Phase
+
+TextInputFormat
+
+(1,I love Hadoop and Spark Programming.)
+
+
+Mapper Phase
+
+
+
+
+			Zookeeper ( Co-ordination Service for 				different processes)
+			  |
+	---------------------------------------------	
+	|					    |
+Standalone Mode				Cluster Mode
+						|
+				-------------------------
+				|			|
+				leader			followers
+				
+
+
+
+
+
+		MapReduce using Java
+			|
+	-----------------------------------------
+	|				        |
+Gen1 API (org.apache.hadoop.mapred)	Gen2 API
+	|			(org.apache.hadoop.mapreduce)
+	|						|	
+ -----------------------------------			|
+|		  |		   |			|
+Mapper		Reducer		MapReduceBase		|
+(Interface)	(Interface)				|
+							|
+				------------------------------
+				|			     |
+				Mapper			Reducer
+				(Class)			(Class)
+
+
+
+
+
+
+Datatypes	Wrapper Class		Writable Class
+
+int		Integer			IntWritable
+float		Float			FloatWritable
+char		String			Text
+double		Double			DoubleWritable
+String		String			Text
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

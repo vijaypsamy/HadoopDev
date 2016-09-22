@@ -1,0 +1,55 @@
+PIG -
+
+Task1:
+
+empdata = LOAD '/home/hadoop/txns' USING PigStorage(',') AS (Txnid:int,Date:chararray,Custid:int,Amount:float,Category:chararray,Subcategory:chararray,state:chararray,city:chararray,type:chararray);
+
+txncatgroup = GROUP empdata by Category;
+txnrev = FOREACH txncatgroup GENERATE group as dcategory,SUM(empdata.Amount);
+
+
+Task2:
+
+empdata = LOAD '/home/hadoop/txns' USING PigStorage(',') AS (Txnid:int,Date:chararray,Custid:int,Amount:float,Category:chararray,Subcategory:chararray,state:chararray,city:chararray,type:chararray);
+
+txntypgroup = GROUP empdata by type;
+txnrev = FOREACH txntypgroup GENERATE group as dtype,COUNT(empdata.Txnid);
+txntyfilter = FILTER txnrev by dtype == 'credit';
+
+Task3:
+
+txnsdata = LOAD '/home/hadoop/txns' USING PigStorage(',') AS (Txnid:int,Date:chararray,Custid:int,Amount:float,Category:chararray,Subcategory:chararray,state:chararray,city:chararray,type:chararray);
+empdata = LOAD '/home/hadoop/custs' USING PigStorage(',') AS (Custid:int,Fname:chararray,Lname:chararray,Age:chararray,Profession:chararray);
+
+empjoin  = JOIN empdata by Custid, empdata by Custid;
+empfilter = FILTER empjoin by Category == 'Exercise & Fitness' and Profession == 'Doctor';
+
+empgroup = GROUP empfilter by (Category,Profession);
+empFinalCount = FOREACH empgroup GENERATE group as dtype,COUNT(empfilter.Txnid);
+
+HIVE - 
+
+create external table txnsTable
+     (txnid int,
+     dat STRING,
+     custid int,
+     amt int,
+     category STRING,
+     subcg STRING,
+     state STRING,
+     city STRING,
+     type STRING)
+     ROW FORMAT DELIMITED
+     FIELDS TERMINATED BY ','
+     LOCATION '/mynewdata';
+	 
+	 !hadoop fs-mkdir /mynewdata;
+	 !hadoop fs -copyFromLocal txns  /mynewdata/txns;
+
+Task1:
+
+select category, sum(amt) from txnsTable group by category;
+
+Task2:
+
+select count(txnid) from txndata where type='cash';

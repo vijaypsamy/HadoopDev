@@ -1,0 +1,21 @@
+Task 1 -- create 6 node cluster as per the following config:
+
+ 	Node 1  (192.168.232.140) - NameNode , JobTracker
+	Node 2 (192.168.232.142) - SecondaryNN
+ 	Node 2 to 6 (192.168.232.142,192.168.232.144,192.168.232.141, 192.168.232.143, 192.168.232.139) - DataNode, TaskTracker
+
+
+Task 2 -- upload 100MB data in HDFS
+	hadoop fs -copyFromLocal /home/hadoop/hadoop/pig-0.15.0.tar.gz /data/sampleData
+
+Task 3 -- Find the block ID's and its location.
+
+
+Total number of blocks: 2
+
+-156981214060707161:	 	192.168.232.142:50010	 	192.168.232.144:50010	 	192.168.232.143:50010
+3218605175084511286:	 	192.168.232.139:50010	 	192.168.232.143:50010	 	192.168.232.141:50010
+
+Task 4 -- Delete the data present in HDFS
+
+hadoop fs -rmr /data/sampleData

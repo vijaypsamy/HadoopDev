@@ -1,0 +1,626 @@
+Apache Hadoop Training 
+========================
+
+Trainer Name: Prashant Nair
+Trainer Email: prashant.nair2050@gmail.com
+
+
+Agenda
+=======
+
+Day 1
+
+Introduction to Bigdata
+Introduction to Hadoop
+Role of Hadoop in Bigdata Industry
+Hadoop generations
+Hadoop execution modes
+Hadoop Installation ( ALL 3 MODES)
+Commercial versions of Hadoop
+
+Day 2
+
+Basic Admin techniques ( Scalability in Hadoop, HDFS commands, HDFS admin commands )
+Hadoop Gen2 ( HDFS and YARN )
+YARN Implementation
+MapReduce Paradigm
+MapReduce Implementations
+
+Day 3
+MapReduce Programming using Java
+WordCount
+Combiner
+Partitioners
+Distributed Cache
+Counters
+Gen2 Coding (YARN Based)
+
+Day 4
+Hadoop Ecosystem Components 
+Apache Pig
+Apache Hive
+Basics on NoSQL
+
+Day 5
+Implementing HBase
+Working on Sqoop
+Working on Flume
+Flume Example 1
+Flume Example 2
+
+
+
+Pre-requisties
+================
+
+1) Core Java
+2) Linux Shell Commands ( ls, vi, cat etc.)
+3) SQL
+4) Basic Networking
+
+
+What is BigData?
+
+BigData is a term. Its not a technology. Its not a tool.
+
+Its all about the ability of your software/framework/architecture to handle the data.
+
+Handle refers to :
+	
+	a) LOAD
+	b) Process
+	c) Convert
+	d) Analyse
+	e) Viz
+..etc.
+
+
+
+Lifecycle of a BigData Projects:
+=================================
+
+
+5 Phases:
+-----------
+
+1) Data Acquisition: Getting the data from multiple sources. Sources can be:
+
+	File
+
+	Stream
+
+	DB
+
+
+2) Data Pre-processing: Making tool understand the data. Convert the data from one form to a meaningful form.
+
+	Hadoop, Spark, ANy Convertor Tools
+
+3) Data Processing Phase( Transformation Phase ):
+
+	Hadoop, Spark, Pig, Hive
+
+4) Data View
+
+	Maintains the output of the processing phase and make it 	query-ready
+
+	NoSQL Tools, SQL tools
+
+5) Analytics & Visualization
+
+	
+
+
+
+
+
+
+
+Data Processing Types: ( OLAP ----)
+-----------------------
+			Data Processing
+				|	
+	----------------------------------------------------
+	|						   |
+
+Batch Processing				Realtime Processing
+(Hadoop, Spark Core, Flink)				|
+							|
+			-----------------------------------------
+			|					|
+		Realtime Analytics		Realtime Interactive
+		(Spark Streaming, Storm		(NoSQL based tools
+		Samza, Flink etc)	(HBase, Cassandra, MongoDB)	
+
+
+Lambda Architecture:
+--------------------
+
+			Lambda Architecture
+				|
+	---------------------------------------------------
+	|			|			 |
+Batch Layer		Speed Layer		Serving Layer
+
+
+
+
+Hadoop
+=======
+
+Hadoop is a distributed processing layer with a distributed storage facility.
+
+Works on Trusted Environments. 
+
+			Hadoop Gen1
+			  |
+	------------------------------------------
+	|					 |
+Storage Part Of Hadoop			Processing Part of Hadoop
+(HDFS- Hadoop Distributed		( MR - MapReduce )
+	File System)			
+This storage is not secure		This is batch-based prossg
+
+
+
+			Hadoop Gen2 ( Lambda Ready)
+				|
+	-------------------------------------------------
+	|			|			|
+	HDFS			MRv2			YARN
+						Resource Management
+						and Negotiation 						Layer
+
+						- Involve Multiple
+						 Processg Layers.
+
+
+Hadoop Features:
+	
+1) Batch Based tool
+2) Support all Variety of Data
+3) Hadoops Capacity is proportional to hardware cluster capacity
+4) Realtime Horizontal Scalability
+
+
+Commercial Version of Hadoop.
+==============================
+
+Hortonworks --- HDP(Linux) -----License for SUpport and not for Tool
+Hortonworks --- HDP(Windows) -----License for SUpport, Windows Server OS, Concurrent Access License, MS SQL License ( enterprise), Concurrent Access License ( MSSQL ), MS VS2012 LIcense and not for Tool
+
+MApR ---- Linux --- License for Support and not for Tool
+Cloudera CDH ---- Linux --- License for Support and not for Tool
+
+
+
+Criteria For Apache Hadoop Installation:
+-------------------------------------------
+1) Java 7 for Gen1, Java7,8 for Gen2 ( java -version )
+2) SSH service must be enabled
+3) Linux Kernel Version must be greater than 2.6.x (uname -a)
+
+
+
+			Hadoop Services/ Daemons
+			  |
+	-----------------------------------------------
+	|					     |
+	HDFS					   MR
+
+a) NameNode				a) JobTRacker
+b) DataNode				b) TaskTracker
+c) SecondaryNamenode
+
+		
+			Hadoop Execution MOdes
+				 |
+	---------------------------------------------------
+	|		|				 |
+StandaloneMode	    PseudoDS(Single Node)	Fully-distributed 	
+(CLI Minicluster)				(MultiNode Cluster)
+
+Hadoop Services
+================
+
+a) Namenode
+
+	Namenode is the master service for Storage
+
+	THe role of this service is to maintain the index information of the data that is stored in HDFS.
+
+Namenode internally maintains two critical filess
+
+	a) fsimage: This maintains the index info of the committed 			session
+
+	b) edits: This maintains the index info of the current 			session. Edits commit the data in two 			scenarios:
+
+		a) During Service Restart
+		b) During Heap Threshold ( 80% of your RAM)
+
+
+2) Datanode - This service is responsible to maintain the actual data in the form of blocks. The default block size is 64MB.
+
+
+3) SecondaryNamenode - This service is responsible to maintain the last known good indexes of the Namenode.
+
+
+
+
+
+Upload the data in HDFS
+-------------------------
+
+hadoop fs -copyFromLocal /home/hadoop/sampledata /data/sampledata
+
+
+List the contents of HDFS
+----------------------------
+
+hadoop fs -ls /
+
+Display the content of file
+-----------------------------
+
+hadoop fs -cat /data/sampledata
+
+
+Delete a file
+---------------
+
+hadoop fs -rmr /data/sampledata
+
+
+
+
+
+
+Setting up Hadoop in Distributed Mode
+--------------------------------------
+
+
+1) Create 5 clones and name it as 
+
+	Node1 - 192.168.247.154
+	Node2 - 192.168.247.167
+	Node3 - 192.168.247.168
+	Node4 - 192.168.247.169
+	Node5 - 192.168.247.148
+
+2) Delete and recreate hdfsdrive. ( IN all 5 systems )
+
+	rm -r hdfsdrive
+	mkdir hdfsdrive
+
+3) Setup NameNode service in all 5 systems:
+
+		vi /home/hadoop/hadoop/conf/core-site.xml
+		
+		fs.default.name = hdfs://node1_ip:9000
+		hadoop.tmp.dir = /home/hadoop/hdfsdrive
+
+Note:- Ensure the core-site.xml points to the correct namenode machine.
+
+4) Setup JObTracker Service in all 5 systems:
+	
+		vi /home/hadoop/hadoop/conf/mapred-site.xml
+
+		mapred.job.tracker = node1_ip:9001
+
+NOte:- Ensure the mapred-site.xml points to the correct jobtracker machine.
+
+5) Setup SecondaryNamenode only in the Namenode system.
+
+	vi /home/hadoop/hadoop/conf/masters	
+		
+	Node2_IP
+
+6) Setup DataNode and TaskTracker service in NamenOde system.
+
+	vi /home/hadoop/hadoop/conf/slaves
+
+	Node3_IP
+	Node4_IP
+	Node5_IP
+
+7) Format the namenode (Node1)
+
+	hadoop namenode -format
+
+
+8) Create a passwordless setup in NN system only ( Not to be done now since we have already performed the same before cloning)
+
+	ssh-keygen
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@node1_ip
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@node2_ip
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@node3_ip
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@node4_ip
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@node5_ip
+
+9) Start Hadoop service ( Only in NN system)
+
+	start-all.sh
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Install Hadoop in Standalone Mode
+===================================
+
+1) Install Ubuntu Server 14.04 OS
+
+2) Install SSH service
+
+	sudo apt-get install openssh-server
+
+3) Install Oracle Java 7
+
+	sudo add-apt-repository ppa:webupd8team/java
+	sudo apt-get update
+	sudo apt-get install oracle-java7-installer
+
+4)Download Hadoop Gen1 from hadoop.apache.org
+
+5) Extract the tar file
+
+	tar -xvzf hadoop-1.2.1.tar.gz
+
+6) Rename the extracted folder
+
+	mv hadoop-1.2.1 hadoop
+
+7) Inform the system about hadoop ( Setting up Environment )
+
+	vi .bashrc
+
+	Go to the EOF and type the following
+	
+	export HADOOP_PREFIX=/home/hadoop/hadoop
+	export PATH=$PATH:$HADOOP_PREFIX/bin
+
+8) Update ENV settings
+
+	exec bash
+
+9) Inform Hadoop where is Java
+
+	vi /home/hadoop/hadoop/conf/hadoop-env.sh
+
+	Uncomment JAVA_HOME and make necessary changes
+
+export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+
+Hadoop is installed.
+
+Basic Syntax for Hadoop MR jar execution
+
+hadoop jar <jar file location> <prog name> <input file path> <o/p folder path>
+
+a) Create sample file named sampledata and add some words to it
+
+b) Execute Hadoop MR using the following commands:
+	
+hadoop jar /home/hadoop/hadoop/hadoop-examples-1.2.1.jar wordcount /home/hadoop/sampledata /home/hadoop/OutputData
+		
+
+
+
+Install Hadoop in PSeudo DS mode
+---------------------------------
+
+1) Install Hadoop in standalone mode
+
+2) Setup Hadoop Services
+
+	a) Namenode  ---> core-site.xml
+	b) JobTracker --> mapred-site.xml
+	c) SecondaryNN --> masters
+	d) DataNode & TaskTracker --> slaves
+
+	a) Namenode
+
+	vi /home/hadoop/hadoop/conf/core-site.xml
+
+	fs.default.name = hdfs://192.168.247.154:9000
+	hadoop.tmp.dir = /home/hadoop/hdfsdrive
+
+<property>
+	<name>fs.default.name</name>
+	<value>hdfs://192.168.247.154:9000</value>
+</property>
+		
+<property>
+	<name>hadoop.tmp.dir</name>
+	<value>/home/hadoop/hdfsdrive</value>
+</property>
+
+
+	b)JobTracker
+
+	vi /home/hadoop/hadoop/conf/mapred-site.xml
+
+
+	mapred.job.tracker = 192.168.247.154:9001
+				(JT_Port= NN_Port+1)
+
+
+
+	c) SecondaryNamenode
+
+	vi /home/hadoop/hadoop/conf/masters
+	
+	192.168.247.154
+
+
+	d) Datanode and Tasktracker
+
+	vi /home/hadoop/hadoop/conf/slaves
+
+	192.168.247.154
+
+
+3) Create HDFS drive
+
+	mkdir hdfsdrive
+
+4) Format HDFS drive
+
+	hadoop namenode -format
+
+5) Creating a passwordless setup
+
+
+	ssh-keygen ( Press Enter 4 times blindly )
+
+	ssh-copy-id -i /home/hadoop/.ssh/id_rsa.pub hadoop@IP_ADD
+
+
+6) Start Hadooop services
+	
+	start-all.sh   / stop-all.sh
+	
+	jps
+
+
+Port Numbers for Web UI
+
+Namenode --- 50070
+JobTracker -- 50030
+TaskTracker -- 50060
+SecondaryNN -- 50090
+DataNode ----- 50075* 
+		( http://IP_ADD:50075/browseDirectory.jsp?dir=/)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Task 1 --- Create 6 node cluster as per the following config:
+
+	Node 1 - NameNode , JobTracker
+	Node 2 - SecondaryNN
+	Node 2 to Node 6 - DataNode TaskTracker
+
+
+Task 2 --- Upload 100MB data in HDFS
+
+Task 3 --- Find the block IDs and its location
+
+Task 4 --- Delete the data present in HDFS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

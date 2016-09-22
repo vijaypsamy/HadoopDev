@@ -1,0 +1,32 @@
+# Disk DescriptorFile
+version=1
+encoding="windows-1252"
+CID=03d96dc4
+parentCID=ffffffff
+isNativeSnapshot="no"
+createType="twoGbMaxExtentSparse"
+
+# Extent description
+RW 8323072 SPARSE "HadoopVM-cl1-s001.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s002.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s003.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s004.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s005.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s006.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s007.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s008.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s009.vmdk"
+RW 8323072 SPARSE "HadoopVM-cl1-s010.vmdk"
+RW 655360 SPARSE "HadoopVM-cl1-s011.vmdk"
+
+# The Disk Data Base 
+#DDB
+
+ddb.adapterType = "lsilogic"
+ddb.deletable = "true"
+ddb.geometry.cylinders = "5221"
+ddb.geometry.heads = "255"
+ddb.geometry.sectors = "63"
+ddb.longContentID = "dcd67154d841db6468c6e7db03d96dc4"
+ddb.uuid = "60 00 C2 9c 9b 7c ce c3-03 56 99 7c 0b 85 b7 54"
+ddb.virtualHWVersion = "12"

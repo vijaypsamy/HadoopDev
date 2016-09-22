@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Foundry>
+<VM>
+<ClientMetaData>
+<clientMetaDataAttributes/>
+<HistoryEventList/></ClientMetaData>
+<VMId type="string">52 62 bf 5d 27 a0 92 62-e7 18 1b a3 16 48 84 b8</VMId>
+<vmxPathName type="string">HadoopVMDev.vmx</vmxPathName></VM><tools-install-info><installError>21004</installError><updateCounter>3</updateCounter></tools-install-info></Foundry>
